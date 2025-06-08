@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+  {% block title %}Register{% endblock %}
+  {% block content %}
+      <h2>Register</h2>
+      <form id="register-form" method="POST">
+          <div class="form-group">
+              <label for="id_number">ID Number</label>
+              <input type="text" id="id_number" name="id_number" required>
+          </div>
+          <div class="form-group">
+              <label for="full_name">Full Name</label>
+              <input type="text" id="full_name" name="full_name" required>
+          </div>
+          <div class="form-group">
+              <label for="role">Role</label>
+              <select id="role" name="role" required>
+                  <option value="operator">Operator</option>
+                  <option value="manager">Manager</option>
+              </select>
+          </div>
+          <div class="form-group">
+              <label for="phone_number">Phone Number</label>
+              <input type="text" id="phone_number" name="phone_number" required>
+          </div>
+          <div class="form-group">
+              <label for="initial_password">Initial Password</label>
+              <input type="password" id="initial_password" name="initial_password" required>
+          </div>
+          <button type="submit">Register</button>
+      </form>
+  {% endblock %}

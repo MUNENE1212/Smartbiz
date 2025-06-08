@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+  {% block title %}Operator Dashboard{% endblock %}
+  {% block content %}
+      <h2>Welcome, {{ user_name }} (Operator)</h2>
+      <div class="actions">
+          <a href="/inventory" class="btn">View Inventory</a>
+          <a href="/sales" class="btn">Record Sales</a>
+          <a href="/feedback" class="btn">Submit Feedback</a>
+      </div>
+  {% endblock %}

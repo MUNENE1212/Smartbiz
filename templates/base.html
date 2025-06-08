@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>{% block title %}SmartBiz Manager{% endblock %}</title>
+      <link rel="stylesheet" href="/static/css/styles.css">
+  </head>
+  <body>
+      <header>
+          <h1>SmartBiz Manager</h1>
+          <nav>
+              {% if session_token %}
+                  {% if role == "manager" %}
+                      <a href="/manager_dashboard">Manager Dashboard</a> |
+                  {% else %}
+                      <a href="/operator_dashboard">Operator Dashboard</a> |
+                  {% endif %}
+                  <a href="/inventory">Inventory</a> |
+                  <a href="/sales">Sales</a> |
+                  <a href="/submit_feedback">Feedback</a> |
+                  {% if role == "manager" %}
+                      <a href="/manage_suppliers">Suppliers</a> |
+                      <a href="/reporting">Reports</a> |
+                      <a href="/register">Register User</a> |
+                  {% endif %}
+                  <a href="/logout">Logout</a>
+              {% else %}
+                  <a href="/login">Login</a> | <a href="/register">Register</a>
+              {% endif %}
+          </nav>
+      </header>
+      <main class="container">
+          {% if error %}
+              <p class="error">{{ error }}</p>
+          {% endif %}
+          {% if success %}
+              <p class="success">{{ success }}</p>
+          {% endif %}
+          {% block content %}{% endblock %}
+      </main>
+      <script src="/static/js/main.js"></script>
+  </body>
+  </html>

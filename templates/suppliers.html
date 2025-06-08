@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block content %}
+    <h2>Manage Suppliers</h2>
+    {% if role == "manager" %}
+        <p>Welcome, {{ user_name }} (Manager)</p>
+        <div class="error"></div>
+        <div class="success"></div>
+        <form id="suppliers-form" method="POST">
+            <div class="form-group">
+                <label for="custom_id">Supplier ID</label>
+                <input type="text" id="custom_id" name="custom_id" required 
+                       pattern="[a-zA-Z0-9\-]+" 
+                       minlength="3"
+                       title="Only letters, numbers, and hyphens allowed. Minimum 3 characters.">
+                <small>Use letters, numbers, and hyphens only (e.g., SUP-001)</small>
+            </div>
+            <div class="form-group">
+                <label for="name">Supplier Name</label>
+                <input type="text" id="name" name="name" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact Person</label>
+                <input type="text" id="contact_person" name="contact_person" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input type="text" id="phone_number" name="phone_number" required 
+                       pattern="[0-9]{10,15}"
+                       title="10-15 digits only">
+                <small>Enter 10-15 digits only</small>
+            </div>
+            <div class="form-group">
+                <label for="email">Email (Optional)</label>
+                <input type="email" id="email" name="email" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="address">Address (Optional)</label>
+                <textarea id="address" name="address" rows="3"></textarea>
+            </div>
+            <button type="submit">Add Supplier</button>
+        </form>
+        
+        <h3>Current Suppliers</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Supplier ID</th>
+                    <th>Name</th>
+                    <th>Contact Person</th>
+                    <th>Phone Number</th>
+                    <th>Email</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="suppliers-list"></tbody>
+        </table>
+        <button id="logout-button">Logout</button>
+
+        <script>
+            // Load suppliers on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                loadSuppliers();
+            });
+
+            // Handle form submission
+            document.getElementById('suppliers-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const supplierData = {
+                    custom_id: formData.get('custom_id'),
+                    name: formData.get('name'),
+                    contact_person: formData.get('contact_person'),
+                    phone_number: formData.get('phone_number'),
+                    email: formData.get('email') || null,
+                    address: formData.get('address') || null
+                };
+
+                try {
+                    // Try multiple possible endpoints
+                    let response = await fetch('/suppliers', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(supplierData)
+                    });
+                    
+                    if (!response.ok && response.status === 404) {
+                        response = await fetch('/api/suppliers', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(supplierData)
+                        });
+                    }
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        showSuccess('Supplier added successfully!');
+                        e.target.reset();
+                        loadSuppliers();
+                    } else {
+                        const result = await response.json().catch(() => ({}));
+                        showError(result.detail || 'Error adding supplier: ' + response.status);
+                    }
+                } catch (error) {
+                    showError('Network error: ' + error.message);
+                }
+            });
+
+            // Load and display suppliers
+            async function loadSuppliers() {
+                try {
+                    // Try multiple possible endpoints
+                    let response = await fetch('/suppliers');
+                    if (!response.ok && response.status === 404) {
+                        response = await fetch('/api/suppliers');
+                    }
+                    
+                    if (response.ok) {
+                        const suppliers = await response.json();
+                        displaySuppliers(suppliers);
+                    } else {
+                        showError('Failed to load suppliers: ' + response.status + ' ' + response.statusText);
+                    }
+                } catch (error) {
+                    showError('Network error: ' + error.message);
+                }
+            }
+
+            // Display suppliers in table
+            function displaySuppliers(suppliers) {
+                const tbody = document.getElementById('suppliers-list');
+                tbody.innerHTML = '';
+
+                suppliers.forEach(supplier => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${supplier.custom_id || 'N/A'}</td>
+                        <td>${supplier.name}</td>
+                        <td>${supplier.contact_person}</td>
+                        <td>${supplier.phone_number}</td>
+                        <td>${supplier.email || 'N/A'}</td>
+                        <td>${supplier.address || 'N/A'}</td>
+                        <td>
+                            <button onclick="editSupplier('${supplier.custom_id}')" class="btn-edit">Edit</button>
+                            <button onclick="deactivateSupplier('${supplier.custom_id}')" class="btn-delete">Deactivate</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Edit supplier function
+            async function editSupplier(customId) {
+                try {
+                    let response = await fetch(`/suppliers/${customId}`);
+                    if (!response.ok && response.status === 404) {
+                        response = await fetch(`/api/suppliers/${customId}`);
+                    }
+                    
+                    if (response.ok) {
+                        const supplier = await response.json();
+                        
+                        // Populate form with supplier data
+                        document.getElementById('custom_id').value = supplier.custom_id;
+                        document.getElementById('name').value = supplier.name;
+                        document.getElementById('contact_person').value = supplier.contact_person;
+                        document.getElementById('phone_number').value = supplier.phone_number;
+                        document.getElementById('email').value = supplier.email || '';
+                        document.getElementById('address').value = supplier.address || '';
+                        
+                        // Disable custom_id field for editing
+                        document.getElementById('custom_id').readOnly = true;
+                        
+                        // Change form to update mode
+                        const form = document.getElementById('suppliers-form');
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        submitBtn.textContent = 'Update Supplier';
+                        
+                        // Add cancel button
+                        if (!document.getElementById('cancel-edit-btn')) {
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.type = 'button';
+                            cancelBtn.id = 'cancel-edit-btn';
+                            cancelBtn.textContent = 'Cancel';
+                            cancelBtn.onclick = cancelEdit;
+                            submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+                        }
+                        
+                        // Modify form submission for update
+                        form.onsubmit = async function(e) {
+                            e.preventDefault();
+                            await updateSupplier(customId);
+                        };
+                        
+                    } else {
+                        showError('Failed to load supplier details: ' + response.status);
+                    }
+                } catch (error) {
+                    showError('Network error: ' + error.message);
+                }
+            }
+
+            // Update supplier
+            async function updateSupplier(customId) {
+                const formData = new FormData(document.getElementById('suppliers-form'));
+                const supplierData = {
+                    custom_id: formData.get('custom_id'),
+                    name: formData.get('name'),
+                    contact_person: formData.get('contact_person'),
+                    phone_number: formData.get('phone_number'),
+                    email: formData.get('email') || null,
+                    address: formData.get('address') || null
+                };
+
+                try {
+                    const response = await fetch(`/suppliers/${customId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(supplierData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showSuccess('Supplier updated successfully!');
+                        cancelEdit();
+                        loadSuppliers();
+                    } else {
+                        showError(result.detail || 'Error updating supplier');
+                    }
+                } catch (error) {
+                    showError('Network error: ' + error.message);
+                }
+            }
+
+            // Cancel edit mode
+            function cancelEdit() {
+                const form = document.getElementById('suppliers-form');
+                form.reset();
+                document.getElementById('custom_id').readOnly = false;
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.textContent = 'Add Supplier';
+                
+                const cancelBtn = document.getElementById('cancel-edit-btn');
+                if (cancelBtn) {
+                    cancelBtn.remove();
+                }
+                
+                // Reset form submission
+                form.onsubmit = async function(e) {
+                    e.preventDefault();
+                    // Original add supplier logic
+                    const formData = new FormData(e.target);
+                    const supplierData = {
+                        custom_id: formData.get('custom_id'),
+                        name: formData.get('name'),
+                        contact_person: formData.get('contact_person'),
+                        phone_number: formData.get('phone_number'),
+                        email: formData.get('email') || null,
+                        address: formData.get('address') || null
+                    };
+
+                    try {
+                        const response = await fetch('/suppliers', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(supplierData)
+                        });
+
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            showSuccess('Supplier added successfully!');
+                            e.target.reset();
+                            loadSuppliers();
+                        } else {
+                            showError(result.detail || 'Error adding supplier');
+                        }
+                    } catch (error) {
+                        showError('Network error: ' + error.message);
+                    }
+                };
+            }
+
+            // Deactivate supplier
+            async function deactivateSupplier(customId) {
+                if (confirm('Are you sure you want to deactivate this supplier?')) {
+                    try {
+                        const response = await fetch(`/suppliers/${customId}`, {
+                            method: 'DELETE'
+                        });
+
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            showSuccess('Supplier deactivated successfully!');
+                            loadSuppliers();
+                        } else {
+                            showError(result.detail || 'Error deactivating supplier');
+                        }
+                    } catch (error) {
+                        showError('Network error: ' + error.message);
+                    }
+                }
+            }
+
+            // Utility functions for showing messages
+            function showSuccess(message) {
+                const successDiv = document.querySelector('.success');
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+                successDiv.style.color = 'green';
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 3000);
+                
+                // Clear error message
+                document.querySelector('.error').style.display = 'none';
+            }
+
+            function showError(message) {
+                const errorDiv = document.querySelector('.error');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                errorDiv.style.color = 'red';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+                
+                // Clear success message
+                document.querySelector('.success').style.display = 'none';
+            }
+
+            // Logout functionality
+            document.getElementById('logout-button').addEventListener('click', function() {
+                if (confirm('Are you sure you want to logout?')) {
+                    window.location.href = '/logout';
+                }
+            });
+        </script>
+
+        <style>
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+            
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            
+            .form-group small {
+                color: #666;
+                font-size: 0.9em;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            
+            table th,
+            table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            
+            table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            
+            .btn-edit {
+                background-color: #4CAF50;
+                color: white;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                margin-right: 5px;
+            }
+            
+            .btn-delete {
+                background-color: #f44336;
+                color: white;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+            }
+            
+            .btn-edit:hover {
+                background-color: #45a049;
+            }
+            
+            .btn-delete:hover {
+                background-color: #da190b;
+            }
+            
+            button[type="submit"],
+            #cancel-edit-btn,
+            #logout-button {
+                background-color: #008CBA;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-right: 10px;
+            }
+            
+            button[type="submit"]:hover,
+            #cancel-edit-btn:hover,
+            #logout-button:hover {
+                background-color: #007B9A;
+            }
+            
+            #cancel-edit-btn {
+                background-color: #f44336;
+            }
+            
+            #cancel-edit-btn:hover {
+                background-color: #da190b;
+            }
+            
+            .error,
+            .success {
+                display: none;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 4px;
+            }
+        </style>
+    {% else %}
+        <p>Access denied: Manager role required.</p>
+    {% endif %}
+{% endblock %}

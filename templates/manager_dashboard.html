@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+  {% block title %}Manager Dashboard{% endblock %}
+  {% block content %}
+      <h2>Welcome, {{ user_name }} (Manager)</h2>
+      <div class="dashboard-actions">
+          <h3>Operator Tasks</h3>
+          <a href="/inventory" class="btn">Manage Inventory</a>
+          <a href="/sales" class="btn">Record Sales</a>
+          <a href="/submit_feedback" class="btn">Submit Feedback</a>
+          <h3>Manager Tasks</h3>
+          <a href="/register" class="btn">Register New User</a>
+          <a href="/manage_suppliers" class="btn">Manage Suppliers</a>
+          <a href="/reporting" class="btn">View Reports</a>
+      </div>
+  {% endblock %}

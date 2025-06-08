@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Add Inventory{% endblock %}
+{% block content %}
+    <h2>Inventory Management</h2>
+    <div class="inventory-controls">
+        <input type="text" id="search-input" placeholder="Search by name, category, or custom ID..." class="search-bar">
+        <button type="button" id="toggle-table-btn">Show Table</button>
+    </div>
+    <div id="inventory-table-container" class="table-container hidden">
+        <h3>Inventory List</h3>
+        <table id="inventory-table" class="scrollable-table">
+            <thead>
+                <tr>
+                    <th>Custom ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Alert Threshold</th>
+                    <th>Selling Price</th>
+                    <th>Buying Price</th>
+                    <th>Supplier</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-list"></tbody>
+        </table>
+    </div>
+    <style>
+        .scrollable-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .scrollable-table thead {
+            background-color: #f4f4f4;
+            position: sticky;
+            top: 0;
+        }
+        .scrollable-table th, .scrollable-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .scrollable-table tbody {
+            display: block;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .scrollable-table thead tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .scrollable-table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .scrollable-table tbody tr:hover {
+            background-color: #e6f3ff; /* Light blue on hover */
+            cursor: pointer;
+        }
+        .inventory-controls {
+            margin-bottom: 10px;
+        }
+        .search-bar {
+            padding: 5px;
+            width: 200px;
+        }
+        .table-container {
+            transition: opacity 0.3s ease;
+        }
+        .table-container.hidden {
+            display: none;
+        }
+        .highlight {
+            background-color: #ffff99; /* Yellow highlight */
+        }
+        .supplier-form {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+        .supplier-form.active {
+            display: block;
+        }
+    </style>
+
+    <h3>Add or Update Inventory</h3>
+    <form id="inventory-form" method="POST" action="javascript:void(0);">
+        <div class="form-group">
+            <label for="custom_id">Custom ID <span class="hint">(Alphanumeric and hyphens only, e.g., ITEM-001)</span></label>
+            <input type="text" id="custom_id" name="custom_id" required pattern="[a-zA-Z0-9-]+" title="Use only letters, numbers, and hyphens (e.g., ITEM-001)">
+        </div>
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" required>
+        </div>
+        <div class="form-group">
+            <label for="current_stock">Current Stock</label>
+            <input type="number" id="current_stock" name="current_stock" value="0" readonly>
+        </div>
+        <div class="form-group">
+            <label for="incoming_stock">Incoming Stock</label>
+            <input type="number" id="incoming_stock" name="incoming_stock" min="0">
+        </div>
+        <div class="form-group">
+            <label for="alert_threshold">Alert Threshold</label>
+            <input type="number" id="alert_threshold" name="alert_threshold" required min="0">
+        </div>
+        <div class="form-group">
+            <label for="selling_price">Selling Price</label>
+            <input type="number" step="0.01" id="selling_price" name="selling_price" required min="0.01">
+        </div>
+        <div class="form-group">
+            <label for="buying_price">Buying Price (required)</label>
+            <input type="number" step="0.01" id="buying_price" name="buying_price" required min="0.01">
+        </div>
+        <div class="form-group">
+            <label for="supplier_id">Supplier Custom ID (optional)</label>
+            <input type="text" id="supplier_id" name="supplier_id" pattern="[a-zA-Z0-9-]+" title="Use only letters, numbers, and hyphens (e.g., SUPP-001)">
+            <button type="button" id="add-supplier-btn">Add New Supplier</button>
+        </div>
+        <div class="form-group supplier-form" id="supplier-form">
+            <label for="supplier_name">Supplier Name</label>
+            <input type="text" id="supplier_name" name="supplier_name">
+            <label for="supplier_phone">Phone Number</label>
+            <input type="text" id="supplier_phone" name="supplier_phone">
+            <label for="supplier_email">Email (optional)</label>
+            <input type="email" id="supplier_email" name="supplier_email">
+            <button type="button" id="save-supplier-btn">Save Supplier</button>
+            <button type="button" id="cancel-supplier-btn">Cancel</button>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description">
+        </div>
+        <div class="form-group">
+            <label for="image_url">Image URL</label>
+            <input type="url" id="image_url" name="image_url">
+        </div>
+        <button type="submit">Add/Update Inventory</button>
+        <div class="error" id="error-el"></div>
+        <div class="success"></div>
+    </form>
+    <style>
+        .hint {
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+{% endblock %}
